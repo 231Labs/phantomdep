@@ -170,3 +170,22 @@ describe('checkout copy', () => {
     assert.match(page, /\$29 \/ seat \/ month \(Stripe TEST\)/);
   });
 });
+
+describe('checkout session', () => {
+  it('creates the seat Checkout Session in subscription mode', () => {
+    const route = readFileSync(new URL('../src/app/api/checkout/route.ts', import.meta.url), 'utf8');
+    assert.match(route, /mode:\s*'subscription'/);
+    assert.doesNotMatch(route, /mode:\s*['"]payment['"]/);
+  });
+
+  it('returns JSON when Checkout Session create fails', () => {
+    const route = readFileSync(new URL('../src/app/api/checkout/route.ts', import.meta.url), 'utf8');
+    const createAt = route.indexOf('stripe.checkout.sessions.create');
+    assert.ok(createAt > 0);
+    const afterCreate = route.slice(createAt);
+    assert.match(afterCreate, /catch\s*\(/);
+    assert.match(afterCreate, /status:\s*502/);
+    assert.match(afterCreate, /error:\s*'Checkout session could not be created'/);
+    assert.match(afterCreate, /console\.error\(\s*'\[phantomdep\] checkout session create failed'/);
+  });
+});
