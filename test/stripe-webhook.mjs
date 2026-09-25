@@ -167,6 +167,6 @@ describe('checkout copy', () => {
     assert.doesNotMatch(route, /Seat price TBD/);
     assert.doesNotMatch(page, /Seat price TBD/);
     assert.match(route, /configured via PHANTOMDEP_STRIPE_PRICE_SEAT/);
-    assert.match(page, /configured via env/);
+    assert.match(page, /\$29 \/ seat \/ month \(Stripe TEST\)/);
   });
 });
