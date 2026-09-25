@@ -55,6 +55,6 @@ export async function GET() {
       process.env.PHANTOMDEP_STRIPE_SECRET_KEY?.startsWith('sk_test_') &&
         process.env.PHANTOMDEP_STRIPE_PRICE_SEAT?.startsWith('price_'),
     ),
-    note: 'POST to start test Checkout. Seat price TBD.',
+    note: 'POST to start test Checkout. Seat price is configured via PHANTOMDEP_STRIPE_PRICE_SEAT (test mode).',
   });
 }

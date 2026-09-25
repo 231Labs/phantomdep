@@ -34,12 +34,12 @@ export default function HomePage() {
 
       <h2>Private-repo seats</h2>
       <p className="note">
-        Seat price TBD — Checkout is scaffolded in test mode with env placeholders. No live
+        Test seat price is configured via env. Checkout stays in Stripe test mode. No live
         Stripe keys until Al unlocks.
       </p>
       <form action="/api/checkout" method="post">
         <button className="btn" type="submit" disabled title="Requires Stripe test env">
-          Checkout (test) — price pending
+          Checkout (test)
         </button>
       </form>
 

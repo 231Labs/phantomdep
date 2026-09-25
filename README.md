@@ -53,7 +53,9 @@ Until then, run locally: `npm test && npm run build`.
 
 ## Checkout (test only)
 
-See `.env.example`. Seat price TBD — do not invent. Live Stripe / Production held until Al unlocks.
+See `.env.example`. Seat price id is configured via `PHANTOMDEP_STRIPE_PRICE_SEAT` (Stripe test mode) — do not invent one. Live Stripe / Production held until Al unlocks.
+
+Webhook: `POST /api/stripe/webhook` with `PHANTOMDEP_STRIPE_WEBHOOK_SECRET` (`whsec_…` from a test-mode endpoint). Preview URL: `https://phantomdep.231labs.com/api/stripe/webhook`.
 
 ## Claims
 
