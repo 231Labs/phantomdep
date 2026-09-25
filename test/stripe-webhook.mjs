@@ -129,14 +129,16 @@ describe('handleStripeWebhook', () => {
 
   it('acks a verified event when the test secret key is unset', () => {
     const payload = eventBody('checkout.session.completed', 'evt_no_api_key');
-    const res = handleStripeWebhook({
-      rawBody: payload,
-      signature: sign(payload),
-      webhookSecret: WHSEC,
-      secretKey: undefined,
-    });
-    assert.equal(res.status, 200);
-    assert.equal(res.body.received, true);
+    const { result } = withInfo(() =>
+      handleStripeWebhook({
+        rawBody: payload,
+        signature: sign(payload),
+        webhookSecret: WHSEC,
+        secretKey: undefined,
+      }),
+    );
+    assert.equal(result.status, 200);
+    assert.equal(result.body.received, true);
   });
 
   it('acks other verified event types without the seat log', () => {
