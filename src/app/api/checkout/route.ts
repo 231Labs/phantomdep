@@ -34,13 +34,23 @@ export async function POST(req: Request) {
   const site = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
   const stripe = new Stripe(secret);
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    line_items: [{ price, quantity: 1 }],
-    success_url: `${site}/?checkout=success&session={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${site}/?checkout=cancel`,
-    metadata: { product: 'phantomdep_seat' },
-  });
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${site}/?checkout=success&session={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${site}/?checkout=cancel`,
+      metadata: { product: 'phantomdep_seat' },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe Checkout session create failed';
+    console.error('[phantomdep] checkout session create failed', message);
+    return NextResponse.json(
+      { error: 'Checkout session could not be created' },
+      { status: 502 },
+    );
+  }
 
   if (!session.url) {
     return NextResponse.json({ error: 'Stripe session missing url' }, { status: 502 });
