@@ -9,4 +9,3 @@ dist/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
-.env*
