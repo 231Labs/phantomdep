@@ -39,6 +39,18 @@ npm test
 npm run build
 ```
 
+## CI workflows (blocked on token scope)
+
+Canonical workflow YAML lives in `docs/github-workflows/` until the pushing identity has the GitHub `workflow` OAuth scope. To enable:
+
+```bash
+gh auth refresh -h github.com -s workflow,repo,read:org,gist
+cp docs/github-workflows/*.yml .github/workflows/
+git add .github/workflows && git commit -m "Enable CI + gate workflows" && git push
+```
+
+Until then, run locally: `npm test && npm run build`.
+
 ## Checkout (test only)
 
 See `.env.example`. Seat price TBD — do not invent. Live Stripe / Production held until Al unlocks.
