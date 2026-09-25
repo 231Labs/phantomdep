@@ -1,0 +1,30 @@
+{
+  "name": "phantomdep",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "PhantomDep Gate — fail-closed npm registry + allowlist GitHub Action",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test test/*.mjs",
+    "test:claims": "node --test test/no-banned-claims.mjs test/findings-claimsafe.mjs",
+    "gate": "node src/action/run.mjs"
+  },
+  "dependencies": {
+    "next": "^15.5.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,21 @@
+# Reusable / demo workflow — fail-closed npm existence + allowlist (block only).
+name: PhantomDep Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: PhantomDep Gate
+        uses: ./

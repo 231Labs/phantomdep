@@ -1,0 +1,7 @@
+{
+  "name": "fixture-allowlist-override",
+  "private": true,
+  "dependencies": {
+    "this-package-definitely-does-not-exist-phantomdep-9f3a2": "1.0.0"
+  }
+}

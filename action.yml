@@ -1,0 +1,15 @@
+name: PhantomDep Gate
+description: Fail-closed npm registry existence + allowlist gate (block only). Engineering findings, not SCA.
+author: 231 Labs
+branding:
+  icon: shield
+  color: purple
+runs:
+  using: composite
+  steps:
+    - name: Run PhantomDep Gate
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: node "${{ github.action_path }}/src/action/run.mjs"
