@@ -16,10 +16,34 @@ jobs:
 const ALLOWLIST = `# .phantomdep-allowlist
 @myorg/private-pkg`;
 
-export default function HomePage() {
+type CheckoutLanding = 'success' | 'cancel' | null;
+
+function checkoutLanding(value: string | string[] | undefined): CheckoutLanding {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === 'success' || raw === 'cancel') return raw;
+  return null;
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string | string[] }>;
+}) {
+  const landing = checkoutLanding((await searchParams).checkout);
+
   return (
     <main>
       <span className="badge">231 Labs · Preview</span>
+      {landing === 'success' ? (
+        <p className="note" role="status">
+          <strong>TEST Checkout completed.</strong> Seats are still Preview — no live billing.
+        </p>
+      ) : null}
+      {landing === 'cancel' ? (
+        <p className="note" role="status">
+          Checkout canceled. Retry the test Checkout button below when you want to continue.
+        </p>
+      ) : null}
       <h1>Block hallucinated dependencies before they install.</h1>
       <p className="hero-sub">
         PhantomDep Gate is a CI Action that fails the job when a dependency name is
@@ -85,16 +109,22 @@ export default function HomePage() {
       </section>
 
       <h2>Private-repo seats — $29 / seat / month (Stripe TEST)</h2>
-      <p className="note">
-        Checkout opens Stripe <strong>test</strong> mode for private seats. Live keys and
-        Production announce held until Al unlocks.
-      </p>
-      <form action="/api/checkout" method="post">
-        <button className="btn" type="submit">
-          Start test Checkout
-        </button>
-      </form>
-      <p className="helper muted">Test mode · no live billing · Preview</p>
+      {landing === 'success' ? (
+        <p className="helper muted">Test mode · no live billing · Preview</p>
+      ) : (
+        <>
+          <p className="note">
+            Checkout opens Stripe <strong>test</strong> mode for private seats. Live keys and
+            Production announce held until Al unlocks.
+          </p>
+          <form action="/api/checkout" method="post">
+            <button className="btn" type="submit">
+              Start test Checkout
+            </button>
+          </form>
+          <p className="helper muted">Test mode · no live billing · Preview</p>
+        </>
+      )}
 
       <details className="install">
         <summary>Install snippet</summary>
