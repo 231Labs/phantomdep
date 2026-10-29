@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "PhantomDep Gate — fail-closed npm registry + allowlist GitHub Action",
+  "bin": {
+    "phantomdep-install": "src/hook/install.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
