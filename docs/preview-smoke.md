@@ -1,7 +1,7 @@
 # Preview smoke checklist
 
 Host: https://phantomdep.231labs.com  
-Tip: main @ `681f8d0`  
+Tip: main @ post-#5 / this PR tip  
 No secrets in these commands. Do not paste `sk_`, `whsec_`, or price ids. Names for those values stay in `.env.example`.
 
 ## Landing
@@ -46,7 +46,25 @@ Expect HTTP 400 and body `{"error":"Missing Stripe signature."}`. Send no `Strip
 ## Action entry
 
 ```bash
-curl -sS https://raw.githubusercontent.com/231Labs/phantomdep/681f8d0/action.yml
+curl -sS https://raw.githubusercontent.com/231Labs/phantomdep/main/action.yml
 ```
 
 Expect `using: composite` and `src/action/run.mjs`.
+
+## Install Allowlist Hook (dry-run)
+
+From a throwaway consumer directory, with `HOOK` pointing at `src/hook/install.mjs` in this checkout. These commands do not start `npm install`.
+
+```bash
+# unknown name after -- is blocked
+node "$HOOK" --phantomdep-dry-run -- this-package-definitely-does-not-exist
+
+# known package after -- is ok
+node "$HOOK" --phantomdep-dry-run -- lodash
+
+# allowlisted registry miss after -- is ok
+printf '%s\n' '@myorg/private-pkg' > .phantomdep-allowlist
+node "$HOOK" --phantomdep-dry-run -- @myorg/private-pkg
+```
+
+Expect a **block** finding for the unknown name. The lodash and allowlisted commands print `dry-run ok`.

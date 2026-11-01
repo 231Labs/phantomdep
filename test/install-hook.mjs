@@ -56,6 +56,28 @@ describe('splitInstallArgv', () => {
     assert.deepEqual(parsed.packageSpecs, ['lodash']);
     assert.deepEqual(parsed.npmArgs, ['--save-dev', 'lodash']);
   });
+
+  it('collects package names after -- and still forwards them', () => {
+    const parsed = splitInstallArgv([
+      '--phantomdep-dry-run',
+      '--save-dev',
+      'lodash',
+      '--',
+      'express@4.21.0',
+      '--save-exact',
+    ]);
+    assert.equal(parsed.dryRun, true);
+    assert.deepEqual(parsed.packageSpecs, ['lodash', 'express@4.21.0']);
+    assert.deepEqual(parsed.npmArgs, ['--save-dev', 'lodash', 'express@4.21.0', '--save-exact']);
+  });
+
+  it('does not treat hook flags after -- as hook flags', () => {
+    const parsed = splitInstallArgv(['--', '--phantomdep-dry-run', '--dir', '/tmp/other', 'left-pad'], '/work');
+    assert.equal(parsed.dryRun, false);
+    assert.equal(parsed.rootDir, '/work');
+    assert.deepEqual(parsed.packageSpecs, ['/tmp/other', 'left-pad']);
+    assert.deepEqual(parsed.npmArgs, ['--phantomdep-dry-run', '--dir', '/tmp/other', 'left-pad']);
+  });
 });
 
 describe('Install Allowlist Hook', () => {
@@ -216,6 +238,140 @@ describe('Install Allowlist Hook', () => {
       assert.equal(plan.findings[0].severity, 'block');
       assert.doesNotMatch(plan.comment, /\*\*warn\*\*/);
       assert.ok(plan.comment.includes(NON_CLAIM_SHORT));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('unknown package after -- blocks and does not spawn npm', async () => {
+    const dir = await tempRoot({});
+    const spawned = [];
+    const logs = [];
+    try {
+      const code = await main(['--phantomdep-dry-run', '--', 'this-package-definitely-does-not-exist'], {
+        cwd: dir,
+        probe: stubProbe(new Map([['this-package-definitely-does-not-exist', { exists: false, status: 404 }]])),
+        spawnNpm: async () => {
+          spawned.push(1);
+          return 0;
+        },
+        log: (line) => logs.push(line),
+        error: () => {},
+      });
+      assert.equal(code, 1);
+      assert.equal(spawned.length, 0);
+      const comment = logs.join('\n');
+      assert.match(comment, /this-package-definitely-does-not-exist/);
+      assert.match(comment, /\*\*block\*\*/);
+      assert.doesNotMatch(comment, /dry-run ok/);
+      assert.doesNotMatch(comment, /\*\*warn\*\*/);
+      assert.equal(claimIn(comment), null);
+      assert.ok(hasRequiredNonClaim(comment));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('allowlisted registry miss after -- passes dry-run and does not spawn npm', async () => {
+    const dir = await tempRoot({
+      '.phantomdep-allowlist': '@myorg/private-pkg\n',
+    });
+    const spawned = [];
+    const logs = [];
+    try {
+      const code = await main(['--phantomdep-dry-run', '--', '@myorg/private-pkg@1.0.0'], {
+        cwd: dir,
+        probe: stubProbe(new Map([['@myorg/private-pkg', { exists: false, status: 404 }]])),
+        spawnNpm: async () => {
+          spawned.push(1);
+          return 0;
+        },
+        log: (line) => logs.push(line),
+      });
+      assert.equal(code, 0);
+      assert.equal(spawned.length, 0);
+      const comment = logs.join('\n');
+      assert.match(comment, /Allowlist overrides/);
+      assert.match(comment, /@myorg\/private-pkg/);
+      assert.equal(claimIn(comment), null);
+      assert.ok(hasRequiredNonClaim(comment));
+      assert.match(logs.at(-1) ?? '', /dry-run ok/);
+      assert.doesNotMatch(comment, /\*\*warn\*\*/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('mix after -- blocks when any name is an ungated registry miss', async () => {
+    const dir = await tempRoot({});
+    const spawned = [];
+    const logs = [];
+    try {
+      const code = await main(
+        ['--phantomdep-dry-run', '--save-dev', 'lodash@4.17.21', '--', 'express', 'not-listed'],
+        {
+          cwd: dir,
+          probe: stubProbe(
+            new Map([
+              ['lodash', { exists: true, status: 200 }],
+              ['express', { exists: true, status: 200 }],
+              ['not-listed', { exists: false, status: 404 }],
+            ]),
+          ),
+          spawnNpm: async (args) => {
+            spawned.push(args);
+            return 0;
+          },
+          log: (line) => logs.push(line),
+          error: () => {},
+        },
+      );
+      assert.equal(code, 1);
+      assert.equal(spawned.length, 0);
+      const comment = logs.join('\n');
+      assert.match(comment, /not-listed/);
+      assert.match(comment, /\*\*block\*\*/);
+      assert.doesNotMatch(comment, /dry-run ok/);
+      assert.doesNotMatch(comment, /\*\*warn\*\*/);
+      assert.equal(claimIn(comment), null);
+      assert.ok(hasRequiredNonClaim(comment));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('mix after -- allows a registry hit and an allowlisted miss, then forwards npm args', async () => {
+    const dir = await tempRoot({
+      '.phantomdep-allowlist': '@myorg/private-pkg\n',
+    });
+    const spawned = [];
+    const logs = [];
+    try {
+      const code = await main(['--save-exact', '--', 'lodash@4.17.21', '@myorg/private-pkg'], {
+        cwd: dir,
+        probe: stubProbe(
+          new Map([
+            ['lodash', { exists: true, status: 200 }],
+            ['@myorg/private-pkg', { exists: false, status: 404 }],
+          ]),
+        ),
+        spawnNpm: async (args, cwd) => {
+          spawned.push({ args, cwd });
+          return 0;
+        },
+        log: (line) => logs.push(line),
+      });
+      assert.equal(code, 0);
+      assert.deepEqual(spawned, [
+        { args: ['--save-exact', 'lodash@4.17.21', '@myorg/private-pkg'], cwd: dir },
+      ]);
+      const comment = logs.join('\n');
+      assert.match(comment, /Allowlist overrides/);
+      assert.match(comment, /@myorg\/private-pkg/);
+      assert.doesNotMatch(comment, /\*\*warn\*\*/);
+      assert.equal(claimIn(comment), null);
+      assert.ok(hasRequiredNonClaim(comment));
+      assert.match(logs.at(-1) ?? '', /Install Allowlist Hook: ok/);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

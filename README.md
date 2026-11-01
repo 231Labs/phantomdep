@@ -3,7 +3,7 @@
 Fail-closed GitHub Action and Preview install hook: an **npm** package may proceed when it exists on the registry, or when a registry miss is listed in `.phantomdep-allowlist`. Otherwise the check fails with a Punch List–tone findings comment.
 
 **Host:** https://phantomdep.231labs.com (Preview) · **Holdco:** 231 Labs Ltd  
-**Tip:** main @ `681f8d0` (PRs #1–#4 merged). CI on that tip is green (`npm test`, `npm run build`).  
+**Tip:** main @ post-#5 / this PR tip. CI on that tip runs `npm test` and `npm run build`.  
 **Week-1 scope:** existence + allowlist **block** only. No package age warn. Engineering findings only.
 
 > Registry / allowlist gate — engineering findings only. Not SCA, not malware-free, not “secure by default.”
@@ -58,7 +58,7 @@ printf '%s\n' '@myorg/private-pkg' > .phantomdep-allowlist
 node "$HOOK" --phantomdep-dry-run @myorg/private-pkg
 ```
 
-`--dir <consumer>` sets the allowlist and `package.json` root. With no package args, the hook checks `package.json` and the lockfile, then runs `npm install`.
+`--dir <consumer>` sets the allowlist and `package.json` root. With no package args, the hook checks `package.json` and the lockfile, then runs `npm install`. Package names after a `--` separator are checked the same way as names before it. npm flags that take a value should be written as `--flag=value`.
 
 ## Develop
 
@@ -70,7 +70,7 @@ npm run build
 
 ## Status (Preview)
 
-Workflows are on main (`.github/workflows/ci.yml`, `.github/workflows/phantomdep-gate.yml`). `docs/github-workflows/` matches those files. CI on `681f8d0` runs `npm ci`, `npm test`, and `npm run build`.
+Workflows are on main (`.github/workflows/ci.yml`, `.github/workflows/phantomdep-gate.yml`). `docs/github-workflows/` matches those files. CI on main @ post-#5 / this PR tip runs `npm ci`, `npm test`, and `npm run build`.
 
 Preview Checkout is configured in Stripe **test** mode. `GET /api/checkout` returns `"ok": true` and `"configured": true`. `POST /api/checkout` answers **303** to Stripe test Checkout. `/?checkout=success` and `/?checkout=cancel` show Preview notes only (no live billing). Seat price configuration stays in the environment; do not invent a price id. Secret names stay in `.env.example`.
 
