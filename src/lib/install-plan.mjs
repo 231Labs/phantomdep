@@ -41,6 +41,8 @@ export function npmRegistryName(spec) {
 
 /**
  * Hook flags are stripped. Remaining args are forwarded to `npm install`.
+ * `--` ends hook-flag parsing only. Package names after it are collected
+ * the same way as names before it. The separator itself is not forwarded.
  *
  * @param {string[]} argv
  * @param {string} [cwd]
@@ -48,6 +50,7 @@ export function npmRegistryName(spec) {
 export function splitInstallArgv(argv, cwd = process.cwd()) {
   let rootDir = cwd;
   let dryRun = false;
+  let endOfHookFlags = false;
   /** @type {string[]} */
   const packageSpecs = [];
   /** @type {string[]} */
@@ -55,20 +58,20 @@ export function splitInstallArgv(argv, cwd = process.cwd()) {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--dir') {
+    if (!endOfHookFlags && arg === '--dir') {
       const next = argv[i + 1];
       if (!next) throw new Error('--dir requires a path');
       rootDir = next;
       i += 1;
       continue;
     }
-    if (arg === '--phantomdep-dry-run') {
+    if (!endOfHookFlags && arg === '--phantomdep-dry-run') {
       dryRun = true;
       continue;
     }
-    if (arg === '--') {
-      npmArgs.push(...argv.slice(i + 1));
-      break;
+    if (!endOfHookFlags && arg === '--') {
+      endOfHookFlags = true;
+      continue;
     }
     if (arg.startsWith('-')) {
       npmArgs.push(arg);
